@@ -20,20 +20,14 @@ public class Problem3 {
             for (int j = 0; j < m; j++)
                 matrix[i][j] = sc.nextInt();
 
-        int[] columns = new int[m];
-        for (int i = 0; i < m; i++)
-            columns[i] = i;
-        for (int i = 0; i < m - 1; i++)
+        for (int i = 0; i < m - 1; i++) {
+            int minCol = i;
             for (int j = i + 1; j < m; j++)
-                if (matrix[0][columns[i]] > matrix[0][columns[j]]) {
-                   swap(columns, i, j);
-                }
-        for (int j = 0; j < m; j++)
-            if (columns[j] != j) {
-                for (int i = 0; i < n; i++)
-                    swap(matrix[i], j, columns[j]);
-                swap(columns, j, columns[j]);
-            }
+                if (matrix[0][minCol] > matrix[0][j])
+                    minCol = j;
+            for (int k = 0; k < n; k++)
+                swap(matrix[k], i, minCol);   
+        }
 
         System.out.println("Sort columns by ascending of their first elements:");
         for (int i = 0; i < n; i++) {
