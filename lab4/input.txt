@@ -1,0 +1,37 @@
+2
+Karasik Simon
+2 5
+1
+1
+2
+MA
+Mazanik
+6
+GA
+Komrakov
+7
+2
+DU
+Zhibrik
+true
+Programming
+Henry
+true
+Alexander Kovalchuk
+2 5
+1
+2
+2
+DU
+Alsevich
+9
+VMA
+Repnikov
+10
+2
+MA
+Zhibrik
+true
+Programming
+Henry
+true
