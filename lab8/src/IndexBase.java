@@ -1,95 +1,61 @@
 import java.io.*;
-import java.util.*;
-import java.util.function.Predicate;
+import java.util.Comparator;
 
-public class IndexBase implements Serializable, Iterable<Long> {
-    private Map<String, Index> indexes;
-    private ArrayList<Long> recordsPointers;
-    private List<Integer> order;
+public class IndexBase implements AutoCloseable, Serializable {
+    public final Index<String> names;
+    public final Index<Long> ids;
+    public final Index<Integer> codes;
+    private String name;
 
-    public IndexBase() {
-        indexes = new HashMap<String, Index>();
-        recordsPointers = new ArrayList<>();
-        order = new ArrayList<>();
-    }
-
-    public Iterator<Long> iterator() {
-        return new Iterator<Long>() {
-            private Iterator<Integer> it = order.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return it.hasNext();
+    public static IndexBase load(String name) throws FileNotFoundException, IOException {
+        IndexBase indexBase = null;
+        if (!(new File(name + ".index")).exists())
+            indexBase = new IndexBase(name);
+        else
+            try (ObjectInputStream ois = new ObjectInputStream(
+                    new FileInputStream(name + ".index"))) {
+                indexBase = (IndexBase) ois.readObject();
+                indexBase.name = name;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
-
-            @Override
-            public Long next() {
-                return recordsPointers.get(it.next());
-            }
-        };
+        return indexBase;
     }
 
-    public void orderBy(String indexName) {
-        order = indexes.get(indexName).getAllIndexes();
-    }
-
-    public Long get(int i) {
-        return recordsPointers.get(order.get(i));
-    }
-
-    public void reverseOrderBy(String indexName) {
-        orderBy(indexName);
-        Collections.reverse(order);
-    }
-
-    public List<Long> findIf(String indexName, Predicate<Comparable> predicate) {
-        List<Long> match = new ArrayList<>();
-        indexes.get(indexName)
-                .findIndexesIf(predicate)
-                .forEach(ind -> match.add(recordsPointers.get(ind)));
-        return match;
-    }
-
-    public boolean contains(String field, Comparable key) {
-        return indexes.get(field).contains(key);
-    }
-
-    public void addIndex(String name, Index index) {
-        indexes.put(name, index);
-    }
-
-    public void put(Object target, long value) {
-        recordsPointers.add(value);
-        int pointerInd = recordsPointers.size() - 1;
-        for (Index index : indexes.values())
-            index.put(target, pointerInd);
-        order.add(pointerInd);
-    }
-
-    public void remove(int value) {
-        for (Index index : indexes.values())
-            index.remove(value);
-    }
-
-    public int size() {
-        return recordsPointers.size();
-    }
-
-    public static IndexBase load(String fileName) throws IOException, ClassNotFoundException {
-        try(ObjectInputStream ois =
-                new ObjectInputStream(
-                        new FileInputStream(fileName))) {
-            return (IndexBase) ois.readObject();
-        }
-    }
-
-    public void save(String fileName) throws IOException {
-        try (ObjectOutputStream ous =
+    public void save() {
+        try (ObjectOutputStream oos =
                      new ObjectOutputStream(
-                             new FileOutputStream(fileName))) {
-            ous.writeObject(this);
-            ous.flush();
+                             new FileOutputStream(name + ".index"))) {
+            oos.writeObject(this);
+            oos.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
+    @Override
+    public void close() {
+        save();
+    }
+
+    public IndexBase(String name) {
+        names = new Index<String>(Comparator.naturalOrder());
+        ids = new Index<Long>(Comparator.naturalOrder());
+        codes = new Index<Integer>(Comparator.naturalOrder());
+        this.name = name;
+    }
+
+    public void add(BankAccount account, long value) {
+        names.put(account.getOwnerName(), value);
+        ids.put(account.getId(), value);
+        codes.put(account.getCode(), value);
+    }
+
+    public void remove(BankAccount account) {
+        names.remove(account.getOwnerName());
+        ids.remove(account.getId());
+        codes.remove(account.getCode());
+    }
 }

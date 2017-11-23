@@ -9,18 +9,6 @@ public class Database implements Serializable, Closeable {
     private IndexBase indexBase;
     private RandomAccessFile dataFile;
 
-//    public Database(String name) throws IOException, ClassNotFoundException {
-//        File dataBase = new File(name + ".db");
-//        if (dataBase.exists())
-//            open(name);
-//        else
-//            create(name);
-//    }
-
-//    private Database() {
-//
-//    }
-
     public static Database create(String name) {
         Database database = new Database();
         try {
@@ -55,7 +43,7 @@ public class Database implements Serializable, Closeable {
     }
 
     public Object get(int row) throws Exception{
-        return Buffer.readObject(dataFile, indexBase.get(row));
+        return Buffer.readObject(dataFile, indexBase.getPointerFor(row));
     }
 
     public void sortBy(String fieldName) {
@@ -69,8 +57,8 @@ public class Database implements Serializable, Closeable {
     public List getAll() {
         List all = new ArrayList();
         try {
-            for (Long ind : indexBase)
-                all.add(Buffer.readObject(dataFile, ind));
+            for (int ind : indexBase)
+                all.add(Buffer.readObject(dataFile, indexBase.getPointerFor(ind)));
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -79,21 +67,24 @@ public class Database implements Serializable, Closeable {
         return all;
     }
 
-    public List getIf(String fieldName, Predicate<Comparable> predicate) {
+    public List<Integer> findRowsIf(String fieldName, Predicate<Comparable> predicate) {
+        return indexBase.findIf(fieldName, predicate);
+    }
+
+    public List findIf(String fieldName, Predicate<Comparable> predicate) {
         List match = new ArrayList();
-        indexBase.findIf(fieldName, predicate)
-                .forEach(pointer -> {
+        findRowsIf(fieldName, predicate)
+                .forEach(row -> {
                     try {
-                        match.add(Buffer.readObject(dataFile, pointer));
+                        match.add(Buffer.readObject(dataFile, indexBase.getPointerFor(row)));
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
+                    } catch (ClassotFoundException e) {
                         e.printStackTrace();
                     }
                 });
         return match;
     }
-
 
     public Iterator iterator() {
         return new Iterator() {

@@ -1,66 +1,80 @@
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.Predicate;
 
+public class Index<T> implements Serializable{
+    private TreeMap<T, List<Long>> map;
 
-interface KeyExtractor extends Serializable {
-    Comparable extractKey(Object object);
-}
-
-
-public class Index implements Serializable {
-    private KeyExtractor keyExtractor;
-    private TreeMap<Comparable, List<Integer>> index;
-
-    public Index(KeyExtractor keyExtractor) {
-        this.keyExtractor = keyExtractor;
-        this.index = new TreeMap<>();
-
+    public Index() {
+        map = new TreeMap<>();
     }
 
-    public boolean contains(Comparable key) {
-        return index.containsKey(key);
+    public Index(Comparator<T> comparator) {
+        map = new TreeMap<T, List<Long>>(comparator);
     }
 
-    public void remove(int value) {
-        for (Map.Entry<Comparable, List<Integer>> entry : index.entrySet())
-            if (entry.getValue().contains(value)) {
-                if (entry.getValue().size() == 1)
-                    index.remove(entry.getKey());
-                else
-                    entry.getValue().remove(value);
-                break;
-            }
-    }
-
-    public List<Integer> findIndexes(Comparable key) {
-        return index.get(key);
-    }
-
-    public void put(Object target, int value) {
-        Comparable key = keyExtractor.extractKey(target);
+    public void put(T key, long value) {
         if (!contains(key))
-            index.put(key, new ArrayList<Integer>());
-        index.get(key).add(value);
-
+            map.put(key, new ArrayList<Long>());
+        map.get(key).add(value);
     }
 
-    public List<Integer> getAllIndexes() {
-        List<Integer> indexes = new LinkedList<Integer>();
-        index.forEach((key, value) -> indexes.addAll(value));
-        return indexes;
+    public boolean contains(T key) {
+        return map.containsKey(key);
     }
 
-    public List<Integer> findIndexesIf(Predicate<Comparable> predicate) {
-        List<Integer> indexes = new LinkedList<Integer>();
-        index.forEach((key, value) -> {
-            if (predicate.test(key))
-                indexes.addAll(value);
-        });
-        return indexes;
+    public List<Long> getAll() {
+        List<Long> all = new ArrayList<>();
+        for (List<Long> list : map.values())
+            all.addAll(list);
+        return all;
     }
 
     public void clear() {
-        index.clear();
+        map.clear();
+    }
+
+    public void remove(T key) {
+        map.remove(key);
+    }
+
+    public List<Long> get(T key) {
+        return map.get(key);
+    }
+
+    public List<Long> getIf(T key, int compareResult) {
+        if (compareResult == 0)
+            get(key);
+        Comparator<? super T> comparator = map.comparator();
+        List<Long> match = new ArrayList<>();
+        for (Map.Entry<T, List<Long>> entry : map.entrySet())
+            if (comparator.compare(entry.getKey(), key) * compareResult > 0 ||
+                    comparator.compare(entry.getKey(), key) == compareResult)
+                match.addAll(entry.getValue());
+        return match;
+    }
+
+    public List<Long> getLess(T key) {
+       return getIf(key, -1);
+    }
+
+    public List<Long> getMore(T key) {
+        return getIf(key, 1);
+    }
+}
+
+class UniqueIndex<T> extends Index<T> {
+    @Override
+    public void put(T key, long value) {
+        if (contains(key))
+            remove(key);
+        super.put(key, value);
+    }
+
+    public UniqueIndex(Comparator<T> comparator) {
+        super(comparator);
+    }
+
+    public UniqueIndex() {
+        super();
     }
 }
