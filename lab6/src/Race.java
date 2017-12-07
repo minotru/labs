@@ -10,8 +10,8 @@ public class Race {
     }
 
     static Car race(Car car1, Car car2, double trackLength) {
-        Car cars[] = {car1, car2};
-        int d[] = {0, 0};
+        Car []cars = {car1, car2};
+        int []d = {0, 0};
         int turnOf = new Random().nextInt(2);
         do {
             turnOf = 1 - turnOf;
