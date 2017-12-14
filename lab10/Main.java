@@ -6,8 +6,8 @@ import java.util.stream.Stream;
 /*
 <applet code = "Main" width = 300 height = 300>
     <param name = "backgroundColor" value = "120 30 30">
-    <param name = "segmentStart" value = "20 40">
-    <param name = "segmentEnd" value = "200 187">
+    <param name = "segmentStart" value = "50 100">
+    <param name = "segmentEnd" value = "250 100">
     <param name = "segmentColor" value = "0 255 0">
 </applet>
 */

@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class Player
 {
-    private static final int[] SHIPS_SETTINGS = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
+    private static final int[] SHIPS_SETTINGS = {2};
     private Scanner input = new Scanner(System.in);
     private Socket socket;
     private BufferedReader serverIn;
@@ -94,7 +94,7 @@ public class Player
     }
 
     public void printGrids() {
-        clearScreen();
+       // clearScreen();
         System.out.println("Your grid");
         printGrid(playerGrid);
         System.out.println("Enemy's grid");
@@ -114,7 +114,7 @@ public class Player
         }
         boolean isRunning = true;
         while (isRunning) {
-            clearScreen();
+            //clearScreen();
             sc = new Scanner(serverIn.readLine());
             String command = sc.next();
             if (command.equals(Protocol.ASK_TURN)) {
@@ -126,14 +126,17 @@ public class Player
                 TestResult result = playerGrid.testCell(row, column);
                 if (playerGrid.isLost()) {
                     serverOut.println(Protocol.GAME_OVER);
+                    isRunning = false;
                     System.out.println("You lose :(((");
                 }
                 else
                     serverOut.println(Protocol.TURN_RESULT + " " + row + " "+ column + " " + result.name());
             } else if (command.equals(Protocol.OPPONENT_TURN)) {
                 System.out.println("Your opponent is doing his turn...");
-            }
-            else if (command.equals(Protocol.TURN_RESULT)){
+            } else if (command.equals(Protocol.OPPONENT_DISCONNECTED)) {
+                System.out.println("Your opponent has diconnected");
+                isRunning = false;
+            } else if (command.equals(Protocol.TURN_RESULT)){
                 int row = sc.nextInt(), column = sc.nextInt();
                 TestResult result = TestResult.valueOf(sc.next());
                 if (result == TestResult.MISS) {
@@ -143,13 +146,11 @@ public class Player
                     enemyGrid.set(row, column, Location.SHIP);
 //                    if (result == TestResult.HIT)
 //                        System.out.println("You've hit");
-//                    else if (result == TestResult.KILL)
-//                        System.out.println("Yeaaah, you killed!");
+                    if (result == TestResult.KILL)
+                        System.out.println("Yeaaah, you killed!");
                 }
                 printGrids();
-
-            }
-            else if (command.equals(Protocol.GAME_OVER)) {
+            } else if (command.equals(Protocol.GAME_OVER)) {
                 System.out.println("Yeaaaaah, you win!!!");
                 isRunning = false;
             }

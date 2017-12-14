@@ -4,42 +4,37 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
+
 public class Server {
-    private static boolean isRunning = true;
-    private static int runningCnt = 2;
+    private static Socket waitingSocket;
 
     public static void main(String[] args) throws Exception {
         ServerSocket listener = new ServerSocket(Constants.PORT);
         System.out.println("Server is running");
-        Socket socket1 = null;
-        Socket socket2 = null;
         try {
-            while (socket1 == null || socket2 == null) {
-                if (socket1 == null)
-                    socket1 = listener.accept();
-                else
-                    socket2 = listener.accept();
-            }
-            System.out.println("1 connected");
-            System.out.println("2 connected");
-            Handler player1 = new Handler(socket1);
-            Handler player2 = new Handler(socket2);
-            player1.setOpponent(player2);
-            player2.setOpponent(player1);
-            player1.start();
-            player2.start();
-            while (runningCnt > 0) {
-
+            Socket socket;
+            while (true) {
+                socket = listener.accept();
+                System.out.println("Player connected");
+                if (waitingSocket == null)
+                    waitingSocket = socket;
+                else {
+                    Handler player1 = new Handler(socket);
+                    Handler player2 = new Handler(waitingSocket);
+                    player1.setOpponent(player2);
+                    player2.setOpponent(player1);
+                    player1.start();
+                    player2.start();
+                    waitingSocket = null;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (socket1 != null)
-                socket1.close();
-            if (socket2 != null)
-                socket2.close();
+
         }
     }
 
@@ -88,16 +83,21 @@ public class Server {
                         default:
                             opponent.out.println(input);
                     }
-
                     if (input == null) {
                         return;
                     }
                 }
-            } catch (IOException e) {
+            } catch (SocketException e) {
+                opponent.out.println(Protocol.OPPONENT_DISCONNECTED);
+            }catch (IOException e) {
                 e.printStackTrace();
             }
             finally {
-                runningCnt--;
+                try {
+                    socket.close();
+                } catch (IOException e) {
+
+                }
             }
         }
     }
